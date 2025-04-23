@@ -11,13 +11,13 @@ import uuid
 try:
     import pypdf
 except ImportError:
-    st.error("PDF 처리를 위해 'pypdf' 라이브러리가 필요합니다. 'pip install pypdf'로 설치해주세요.")
+    st.error("The 'pypdf' library is required for PDF processing. Please install it using 'pip install pypdf'.")
     pypdf = None
 
 try:
     import docx
 except ImportError:
-    st.error("Word 문서 처리를 위해 'python-docx' 라이브러리가 필요합니다. 'pip install python-docx'로 설치해주세요.")
+    st.error("The 'python-docx' library is required for Word document processing. Please install it using 'pip install python-docx'.")
     docx = None
 
 # root path of the project
@@ -32,7 +32,7 @@ try:
     from config.settings import FAISS_INDEX_PATH, EMBEDDING_MODEL_NAME, DEVICE, DEVICE_NUMBER
     from utils.file_processor import process_text_to_docs, process_file_to_docs
 except ImportError as e:
-    st.error(f"모듈 임포트 오류: {e}. 경로 설정을 확인하세요.")
+    st.error(f"Module import error: {e}. Please check your path settings.")
     st.stop() # app stop when error occurs
 
 if DEVICE_NUMBER:
@@ -69,14 +69,14 @@ if 'messages' not in st.session_state:
 if 'text_input_area' not in st.session_state:
     st.session_state.text_input_area = ""
 
-    
+
 base_vector_dir = os.path.dirname(FAISS_INDEX_PATH)
 if not os.path.exists(base_vector_dir):
     try:
         os.makedirs(base_vector_dir)
         logger.info(f"Created base vector store directory: {base_vector_dir}")
     except OSError as e:
-        st.error(f"베이스 벡터 스토어 디렉토리 생성 실패: {base_vector_dir}. 오류: {e}")
+        st.error(f"Failed to create base vector store directory: {base_vector_dir}. Error: {e}")
         st.stop()
 
 SESSION_FAISS_INDEX_PATH = os.path.join(
@@ -94,6 +94,7 @@ def load_rag_system(index_path_prefix: str) -> Optional[RAGSystem]:
     """
     if not st.session_state.rag_system_initialized:
         try:
+            # Keep spinner text in English
             with st.spinner("Initializing RAG System... (Models loading, may take time)"):
                 logger.info("Attempting to initialize RAGSystem...")
                 st.session_state.rag_system = RAGSystem(index_path_prefix=index_path_prefix) # Initialization happens here
@@ -102,14 +103,14 @@ def load_rag_system(index_path_prefix: str) -> Optional[RAGSystem]:
                 if st.session_state.rag_system.vector_store_manager.vector_store:
                     logger.info("Existing FAISS index loaded successfully.")
                     st.session_state.context_loaded = True # Mark context as loaded if index exists
-                    st.success("RAG 시스템 초기화 완료. 기존 지식 베이스 로드 완료.")
+                    st.success("RAG system initialization complete. Existing knowledge base loaded.")
                 else:
                     logger.info("RAGSystem initialized, no existing knowledge base found.")
-                    st.success("RAG 시스템 초기화 완료. 새로운 지식 베이스 로드 준비 완료.")
+                    st.success("RAG system initialization complete. Ready to load a new knowledge base.")
                     st.session_state.context_loaded = False
         except Exception as e:
             logger.error(f"Failed to initialize RAG system: {e}", exc_info=True)
-            st.error(f"RAG 시스템 초기화 중 오류 발생: {e}")
+            st.error(f"Error occurred during RAG system initialization: {e}")
             st.session_state.rag_system = None
             st.session_state.rag_system_initialized = False
             st.stop() # Stop the app if core system fails
@@ -133,8 +134,8 @@ def clear_existing_index(index_path_prefix: str):
             logger.info(f"Deleted existing pkl file: {pkl_file}")
             deleted = True
     except Exception as e:
-        logger.error(f"인덱스 파일 삭제 중 오류 발생 ({index_path_prefix}): {e}")
-        st.warning(f"인덱스 파일 삭제 중 오류 발생 ({index_path_prefix}): {e}")
+        logger.error(f"Error occurred while deleting index files ({index_path_prefix}): {e}")
+        st.warning(f"Error occurred while deleting index files ({index_path_prefix}): {e}")
     return deleted # Return status
 
 # --- RAG System loading ---
@@ -148,24 +149,25 @@ if rag_system: # show UI only if system is loaded successfully
     col1, col2 = st.columns(2)
 
     with col1:
-        st.subheader("📚 컨텍스트 입력")
+        st.subheader("📚 Context Input")
 
         context_option = st.radio(
-            "컨텍스트 입력 방식 선택:",
-            ("파일 업로드", "컨텍스트 직접 입력"),
+            "Select Context Input Method:",
+            ("File Upload", "Direct Text Input"),
             key="context_input_method"
         )
 
         docs_to_load: List[Document] = []
         uploaded_file_obj = None # Keep track of the uploaded file object
 
-        if context_option == "컨텍스트 직접 입력":
-            context_text = st.text_area("컨텍스트를 입력하세요:", height=300, key="text_input_area")
+        if context_option == "Direct Text Input": # Changed Korean option to English
+            context_text = st.text_area("Enter context here:", height=300, key="text_input_area")
             if context_text:
                 # Process pasted text into documents using the utility function
                 docs_to_load = process_text_to_docs(context_text, source="pasted_text")
-        else:
+        else: # Changed Korean option to English: "File Upload"
             uploaded_file_obj = st.file_uploader(
+                # Keep English label
                 "Upload a file (PDF, DOCX, TXT supported):",
                 type=["pdf", "docx", "txt"],
                  # accept_multiple_files=False # Current setup processes one file at a time
@@ -173,18 +175,18 @@ if rag_system: # show UI only if system is loaded successfully
             )
             if uploaded_file_obj:
                 # Process uploaded file into documents using the utility function
-                with st.spinner(f"파일 처리 중: {uploaded_file_obj.name}..."):
+                with st.spinner(f"Processing file: {uploaded_file_obj.name}..."):
                     docs_to_load = process_file_to_docs(uploaded_file_obj)
                     if not docs_to_load:
                          # Error/warning is logged by process_file_to_docs
-                         st.warning(f"텍스트 추출 또는 파일 처리 실패: '{uploaded_file_obj.name}'. 자세한 내용은 로그를 확인하세요.")
+                         st.warning(f"Text extraction or file processing failed: '{uploaded_file_obj.name}'. Check logs for details.")
 
         # Option to clear the existing index before loading
-        clear_index_before_load = st.checkbox("새 데이터 추가 전 현재 세션의 지식 베이스 지우기", value=False, key="clear_index_cb")
+        clear_index_before_load = st.checkbox("Clear current session's knowledge base before adding new data", value=False, key="clear_index_cb")
 
-        if st.button("➕ 지식 베이스에 입력한 컨텍스트 추가", key="add_context_button"):
+        if st.button("➕ Add Input Context to Knowledge Base", key="add_context_button"):
             if docs_to_load:
-                with st.spinner("컨텍스트 처리 및 벡터 DB 업데이트 중..."):
+                with st.spinner("Processing context and updating vector DB..."):
                     try:
                         # 1. Optionally clear the existing index
                         if clear_index_before_load:
@@ -194,27 +196,27 @@ if rag_system: # show UI only if system is loaded successfully
                                 rag_system.retriever = None
                                 st.session_state.context_loaded = False
                                 logger.info(f"FAISSVectorStoreManager internal store reset for session {st.session_state.session_id}.")
-                                st.info("현재 세션의 벡터 인덱스 파일을 삭제했습니다.")
+                                st.info("Deleted the vector index files for the current session.")
                             else:
                                 logger.warning("Clear index requested, but no index files found or deletion failed.")
-                                st.info("삭제할 기존 인덱스 파일을 찾지 못했습니다.")
+                                st.info("No existing index files found to delete.")
                         # 2. Add the new documents (RAGSystem already knows its session path)
                         logger.info(f"Adding {len(docs_to_load)} document chunks to the knowledge base for session {st.session_state.session_id}...")
                         rag_system.add_documents_to_knowledge_base(docs_to_load)
 
                         st.session_state.context_loaded = True
-                        st.success(f"{len(docs_to_load)} 개의 문서 청크가 현재 세션의 지식 베이스에 추가/업데이트되었습니다!")
+                        st.success(f"{len(docs_to_load)} document chunks added/updated in the current session's knowledge base!")
                     except Exception as e:
                         logger.error(f"Error occurs while adding documents to the knowledge base {e}", exc_info=True)
-                        st.error(f"컨텍스트 추가 실패: {e}")
+                        st.error(f"Failed to add context: {e}")
                         st.session_state.context_loaded = rag_system.vector_store_manager.vector_store is not None
             else:
                 # Only show warning if no file was processed OR text was empty
-                if not (context_option == "Upload File" and uploaded_file_obj):
-                    st.warning("추가할 컨텍스트가 없습니다. 텍스트를 붙여넣거나 파일을 업로드하세요.")
-                    
-        if st.button("➖ 현재 세션에서 만들어진 지식 베이스 삭제", key="delete_context_button"):
-            with st.spinner("지식 베이스 삭제중..."):
+                if not (context_option == "File Upload" and uploaded_file_obj): # Use English option name
+                    st.warning("No context to add. Please paste text or upload a file.")
+
+        if st.button("➖ Delete Knowledge Base Created in Current Session", key="delete_context_button"):
+            with st.spinner("Deleting knowledge base..."):
                 try:
                     # clear the existing index
                     if clear_existing_index(SESSION_FAISS_INDEX_PATH):
@@ -223,22 +225,22 @@ if rag_system: # show UI only if system is loaded successfully
                         rag_system.retriever = None
                         st.session_state.context_loaded = False
                         logger.info(f"FAISSVectorStoreManager internal store reset for session {st.session_state.session_id}.")
-                        st.info("현재 세션의 벡터 인덱스 파일을 삭제했습니다.")
+                        st.info("Deleted the vector index files for the current session.")
                     else:
                         logger.warning("Clear index requested, but no index files found or deletion failed.")
-                        st.info("삭제할 기존 인덱스 파일을 찾지 못했습니다.")
+                        st.info("No existing index files found to delete.")
                 except Exception as e:
                     logger.error(f"Error occurs while deleting documents to the knowledge base {e}", exc_info=True)
-                    st.error(f"컨텍스트 삭제 실패: {e}")
+                    st.error(f"Failed to delete context: {e}")
 
     with col2:
-        st.subheader("💬 챗봇")
+        st.subheader("💬 Chatbot")
 
         # Button to clear chat history
-        if st.button("🧹 채팅 세션 초기화"):
+        if st.button("🧹 Reset Chat Session"):
             st.session_state.messages = []
             if rag_system and hasattr(rag_system, 'clear_chat_history'):
-                 rag_system.clear_chat_history() # Clear RAG system's internal history too
+                rag_system.clear_chat_history() # Clear RAG system's internal history too
             logger.info("Chat session cleared by user.")
             st.rerun()
 
@@ -246,13 +248,13 @@ if rag_system: # show UI only if system is loaded successfully
         for message in st.session_state.messages:
             with st.chat_message(message["role"]):
                 st.markdown(message["content"])
-                
+
         # Ensure retriever is fetched if vector store exists
         if rag_system.vector_store_manager.vector_store and not rag_system.retriever:
             rag_system.retriever = rag_system.vector_store_manager.get_retriever()
-        
+
         # Chat input field
-        if prompt := st.chat_input("지식 베이스에 기반한 질문을 입력하세요..."):
+        if prompt := st.chat_input("Ask a question based on the knowledge base..."):
             # Add user message to chat history and display it
             st.session_state.messages.append({"role": "user", "content": prompt})
             with st.chat_message("user"):
@@ -260,12 +262,12 @@ if rag_system: # show UI only if system is loaded successfully
 
             # Check if context has been loaded before allowing query
             if not st.session_state.context_loaded:
-                st.warning("먼저 컨텍스트(텍스트 또는 파일)를 지식 베이스에 로드하세요.")
+                st.warning("Please load context (text or file) into the knowledge base first.")
                 # Remove the user message we just added, as we can't process it
                 st.session_state.messages.pop()
             else:
                 # Get AI response from RAG system
-                with st.spinner("생각 중..."):
+                with st.spinner("Thinking..."):
                     try:
                         logger.info(f"Processing user query: '{prompt}'")
                         response = rag_system.get_response(prompt)
@@ -278,15 +280,15 @@ if rag_system: # show UI only if system is loaded successfully
 
                     except Exception as e:
                         logger.error(f"Error getting response for query '{prompt}': {e}", exc_info=True)
-                        st.error(f"응답 생성 중 오류 발생: {e}")
+                        st.error(f"Error occurred while generating response: {e}")
 
 else:
-    st.warning("RAG 시스템을 로드하지 못했습니다. 설정을 확인하거나 관리자에게 문의하세요.")
+    st.warning("Failed to load the RAG system. Please check settings or contact an administrator.")
 
 # app execution information
-st.sidebar.header("시스템 정보")
-st.sidebar.info(f"세션 ID: {st.session_state.session_id}")
-st.sidebar.info(f"디바이스 타입: {DEVICE}")
+st.sidebar.header("System Information")
+st.sidebar.info(f"Session ID: {st.session_state.session_id}")
+st.sidebar.info(f"Device Type: {DEVICE}")
 if DEVICE_NUMBER:
-    st.sidebar.info(f"다바이스 번호: {DEVICE_NUMBER}")
-st.sidebar.info(f"임베딩 모델: {EMBEDDING_MODEL_NAME}")
+    st.sidebar.info(f"Device Number: {DEVICE_NUMBER}")
+st.sidebar.info(f"Embedding Model: {EMBEDDING_MODEL_NAME}")
