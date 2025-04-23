@@ -1,0 +1,16 @@
+langchain==0.3.23
+langchain-core==0.3.51
+langchain-community==0.3.21
+faiss-gpu==1.7.2
+torch==2.6.0
+sentence-transformers==4.0.2
+transformers==4.51.2
+httpx==0.28.1
+tiktoken==0.9.0
+python-dotenv==1.0.1
+pypdf==5.4.0
+python-docx==1.1.2
+numpy==1.26.4
+vllm==0.8.3
+streamlit==1.44.1
+uuid==1.30
