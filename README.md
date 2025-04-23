@@ -130,8 +130,9 @@ This system features the following modular structure and data flow:
 - **Prerequisites**
 
   - Python 3.10+
+  - Linux (For vLLM and FAISS-GPU)
   - Git
-  - (For GPU usage) NVIDIA driver, CUDA Toolkit (PyTorch compatible version)
+  - NVIDIA driver, CUDA Toolkit (PyTorch compatible version), NVIDIA GPU (Supporting vLLM)
   - Running vLLM server: A vLLM instance serving the model corresponding to `VLLM_MODEL_IDENTIFIER` in `config/settings.py` is required.
 
 - **Clone Repository**
