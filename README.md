@@ -1,7 +1,3 @@
-Okay, here is the full English translation of the provided README document.
-
----
-
 # Advanced-Multiturn-RAG-System
 
 ## 1\. Overview
