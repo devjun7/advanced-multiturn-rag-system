@@ -6,6 +6,7 @@ import io
 import logging
 import os
 from typing import List, Optional
+import streamlit as st # Added import for st.error/st.warning
 
 # Optional dependencies
 try:
@@ -70,7 +71,7 @@ def process_file_to_docs(uploaded_file) -> List[Document]:
 
     Args:
         uploaded_file: A file-like object, typically from Streamlit's file_uploader.
-                       Should have 'name' and 'getvalue()' attributes.
+                         Should have 'name' and 'getvalue()' attributes.
 
     Returns:
         A list of Document objects representing chunks of the extracted text.
@@ -86,7 +87,7 @@ def process_file_to_docs(uploaded_file) -> List[Document]:
         logger.info(f"Processing file: {file_name}")
     except Exception as e:
         logger.error(f"Could not read content from uploaded file '{file_name}': {e}", exc_info=True)
-        st.error(f"파일 '{file_name}' 내용을 읽을 수 없습니다: {e}")
+        st.error(f"Could not read content from file '{file_name}': {e}")
         return []
 
     docs = []
@@ -97,7 +98,7 @@ def process_file_to_docs(uploaded_file) -> List[Document]:
         if file_name.lower().endswith(".pdf"):
             if pypdf is None:
                 logger.error("Cannot process PDF '{file_name}', 'pypdf' library is not installed.")
-                st.error("PDF 처리를 위한 'pypdf' 라이브러리가 설치되지 않았습니다.")
+                st.error("The 'pypdf' library is not installed for PDF processing.")
                 return []
             extracted_text = _extract_text_from_pdf(file_content, file_name)
 
@@ -105,7 +106,7 @@ def process_file_to_docs(uploaded_file) -> List[Document]:
         elif file_name.lower().endswith(".docx"):
             if docx is None:
                 logger.error("Cannot process DOCX '{file_name}', 'python-docx' library is not installed.")
-                st.error("Word 문서 처리를 위한 'python-docx' 라이브러리가 설치되지 않았습니다.")
+                st.error("The 'python-docx' library is not installed for Word document processing.")
                 return []
             extracted_text = _extract_text_from_docx(file_content, file_name)
 
@@ -123,13 +124,12 @@ def process_file_to_docs(uploaded_file) -> List[Document]:
             docs = process_text_to_docs(extracted_text, source=file_name)
         else:
             # Warning/error logged within extraction functions if text is empty
-             logger.warning(f"No text extracted from file '{file_name}'. No documents generated.")
-             st.warning(f"파일 '{file_name}'에서 텍스트를 추출하지 못했습니다.")
-
+            logger.warning(f"No text extracted from file '{file_name}'. No documents generated.")
+            st.warning(f"Could not extract text from file '{file_name}'.")
 
     except Exception as e:
         logger.error(f"Error processing file '{file_name}': {e}", exc_info=True)
-        st.error(f"파일 '{file_name}' 처리 중 오류 발생: {e}")
+        st.error(f"Error occurred while processing file '{file_name}': {e}")
         return [] # Return empty list on failure
 
     return docs
@@ -154,7 +154,7 @@ def _extract_text_from_pdf(content_bytes: bytes, filename: str) -> str:
             logger.warning(f"No text could be extracted from PDF '{filename}'. It might be image-based or encrypted.")
     except Exception as e:
         logger.error(f"Failed to read PDF file '{filename}': {e}", exc_info=True)
-        st.error(f"PDF 파일 '{filename}'을 읽는 중 오류 발생: {e}")
+        st.error(f"Error occurred while reading PDF file '{filename}': {e}")
     return extracted_text
 
 def _extract_text_from_docx(content_bytes: bytes, filename: str) -> str:
@@ -167,7 +167,7 @@ def _extract_text_from_docx(content_bytes: bytes, filename: str) -> str:
             logger.warning(f"No text could be extracted from DOCX file '{filename}'.")
     except Exception as e:
         logger.error(f"Failed to read DOCX file '{filename}': {e}", exc_info=True)
-        st.error(f"DOCX 파일 '{filename}'을 읽는 중 오류 발생: {e}")
+        st.error(f"Error occurred while reading DOCX file '{filename}': {e}")
     return extracted_text
 
 def _extract_text_from_txt(content_bytes: bytes, filename: str, is_fallback: bool = False) -> str:
@@ -178,15 +178,15 @@ def _extract_text_from_txt(content_bytes: bytes, filename: str, is_fallback: boo
         if is_fallback:
             logger.info(f"Successfully processed unknown file type '{filename}' as UTF-8 text.")
     except UnicodeDecodeError:
-        logger.warning(f"Could not decode '{filename}' as UTF-8. Trying CP949 (Korean)...")
+        logger.warning(f"Could not decode '{filename}' as UTF-8. Trying CP949 (Korean)...") # Keep explanation
         try:
             extracted_text = content_bytes.decode("cp949")
             logger.info(f"Successfully decoded '{filename}' as CP949.")
         except Exception as decode_e:
             logger.error(f"Failed to decode '{filename}' with both UTF-8 and CP949: {decode_e}")
-            st.error(f"파일 '{filename}'을 UTF-8과 CP949로 디코딩하지 못했습니다: {decode_e}")
+            st.error(f"Failed to decode file '{filename}' with both UTF-8 and CP949: {decode_e}")
             extracted_text = "" # Ensure empty string on failure
     except Exception as e:
-         logger.error(f"Error reading text file '{filename}': {e}", exc_info=True)
-         extracted_text = ""
+       logger.error(f"Error reading text file '{filename}': {e}", exc_info=True)
+       extracted_text = ""
     return extracted_text
