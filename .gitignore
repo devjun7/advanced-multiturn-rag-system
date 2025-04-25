@@ -1,0 +1,6 @@
+__pycache__/
+*.so
+build/
+MANIFEST
+*.log
+./vector_store/
