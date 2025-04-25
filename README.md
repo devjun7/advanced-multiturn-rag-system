@@ -138,7 +138,7 @@ This system features the following modular structure and data flow:
 - **Clone Repository**
 
   ```bash
-  git clone https://gitlab.com/wisenut-research/ai/Modules/advanced-multiturn-rag-system.git
+  git clone https://github.com/devjun7/advanced-multiturn-rag-system.git
   cd advanced-multiturn-rag-system
   ```
 
