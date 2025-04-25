@@ -1,20 +1,29 @@
-# Advanced-Multiturn-RAG-System
+# 📚 Advanced-Multiturn-RAG-System
+
+**An advanced Retrieval-Augmented Generation (RAG) system designed for robust multi-turn conversations, efficient inference, and flexible knowledge integration.**
+
+This project implements a sophisticated RAG system leveraging a modern technology stack to handle complex question-answering and information retrieval tasks. Key features include multi-turn conversation management, dynamic query rewriting, adaptive conversation history handling, and support for various document formats. It utilizes a Streamlit-based web UI for user interaction and performs efficient inference via a Large Language Model (LLM) hosted on a vLLM server.
 
 ## 1\. Overview
 
-This project is an advanced Retrieval-Augmented Generation (RAG) system built using a modern technology stack. It aims to deliver high performance in complex question-answering and information retrieval tasks through features such as multi-turn conversation management, dynamic query rewriting, adaptive conversation history handling, and support for various document formats. It interacts with users via a Streamlit-based web UI and performs efficient inference using a Large Language Model (LLM) hosted via vLLM.
+The Advanced-Multiturn-RAG-System goes beyond simple retrieval by understanding context within ongoing conversations to generate accurate and relevant responses.
+
+* **Handles Complex Queries:** Effectively answers questions that require understanding previous turns in the conversation.
+* **Versatile Document Support:** Builds knowledge bases from text input as well as `.txt`, `.pdf`, and `.docx` file uploads.
+* **High-Performance Inference:** Integrates with vLLM for fast and efficient LLM serving, ensuring low latency responses.
+* **Developer-Friendly Design:** Features a modular architecture for ease of maintenance and extension.
 
 ## 2\. Features
 
-- **Utilizes High-Performance Embedding Models**: Uses embedding models like `intfloat/multilingual-e5-large-instruct` to generate high-quality embedding vectors for context documents and user queries.
-- **vLLM-based LLM Inference**: Supports fast and efficient text generation by interfacing with an LLM (`qwq 32b` or the configured model) hosted on an external vLLM server. (`llm/vllm_client.py`)
-- **FAISS Vector Store**: Uses FAISS (Facebook AI Similarity Search) to efficiently store large-scale document embeddings and perform similarity searches. (`retrievers/faiss_retriever.py`)
-- **Multi-turn Conversation Management**: Remembers previous conversation context and utilizes it for current query processing and response generation. (`history/manager.py`)
-- **Adaptive History Handling**: Dynamically changes the processing method based on the length of the conversation history. Short histories are used entirely, while for long histories, a RAG approach based on relevance to the current query is applied to selectively include key information in the LLM input. (`history/adaptive_handler.py`)
-- **LLM-based Query Rewriting**: Rewrites the user's current query into a standalone, search-friendly form based on the conversation history, improving search accuracy. (`rewriting/rewriter.py`)
-- **Support for Various Document Formats**: Allows building context not only from text input but also by uploading `.txt`, `.pdf`, and `.docx` files. (`process_file_to_docs` within `main.py`)
-- **Streamlit-based Web UI**: Provides an intuitive web interface for users to easily load context and interact with the system. (`main.py`)
-- **Modular Design**: Each function (embedding, LLM, retrieval, history management, etc.) is separated into distinct modules, facilitating maintenance and expansion.
+* **🚀 High-Performance Embeddings:** Utilizes state-of-the-art embedding models (e.g., `intfloat/multilingual-e5-large-instruct`) to generate high-quality vector representations for documents and queries.
+* **⚡️ vLLM-Powered LLM Inference:** Interfaces with an external LLM (e.g., `Qwen/QWQ-32B` or any huggingface/local models supporting vLLM) served via vLLM for rapid and scalable text generation. (`llm/vllm_client.py`)
+* **💾 FAISS Vector Store:** Employs FAISS for efficient storage and fast similarity searches over large-scale document embeddings. (`retrievers/faiss_retriever.py`)
+* **🧠 Multi-turn Conversation Management:** Maintains conversation history and leverages it for context-aware query processing and response generation. (`history/manager.py`)
+* **💡 Adaptive History Handling:** Dynamically adjusts history processing based on length. Short histories are used entirely; for longer histories, a RAG approach is applied to the history itself, retrieving relevant turns based on the current query to manage context limits effectively. (`history/adaptive_handler.py`)
+* **✍️ LLM-Based Query Rewriting:** Rewrites the user's current query into a standalone, search-optimized format based on the conversation history, enhancing retrieval accuracy. (`rewriting/rewriter.py`)
+* **📄 Diverse Document Format Support:** Accepts context via direct text input or file uploads (`.txt`, `.pdf`, `.docx`). (`main.py` via `utils/file_processor.py`)
+* **💻 Intuitive Web UI (Streamlit):** Provides a user-friendly web interface for loading context and interacting with the system. (`main.py`)
+* **🧩 Modular Design:** Core functionalities (embedding, LLM client, retrieval, history management) are encapsulated in distinct modules, promoting maintainability and extensibility.
 
 ## 3\. System Architecture
 
@@ -169,11 +178,11 @@ This system features the following modular structure and data flow:
 - **Configuration**
 
   - Open the `config/settings.py` file, review the settings, and modify if necessary.
-  - **Most important setting:** `VLLM_ENDPOINT_URL` must be changed to the OpenAI-compatible API endpoint address of your running vLLM server (e.g., `"http://localhost:8087/v1/completions"`).
+  - **Most important setting:** `VLLM_ENDPOINT_URL` must be changed to the OpenAI-compatible API endpoint address of your running vLLM server (e.g., `"http://localhost:9090/v1/completions"`).
   - `VLLM_MODEL_IDENTIFIER` should match the model identifier used by the vLLM server.
   - If needed, create a `.env` file to manage sensitive information like `VLLM_ENDPOINT_URL` or `VLLM_API_KEY` (requires the `python-dotenv` library).
   - Verify that `EMBEDDING_MODEL_NAME` is correct.
-  - Ensure the `DEVICE` setting ("cuda" or "cpu") matches your environment.
+  - Ensure the `DEVICE` setting ("cuda" or "cpu") matches your environment. (This determines the device for retriever model)
 
 - **Run vLLM Server**
 
@@ -181,7 +190,7 @@ This system features the following modular structure and data flow:
   - Below is an example command:
     ```bash
     CUDA_VISIBLE_DEVICES=0 python -m vllm.entrypoints.openai.api_server \
-    --port 8087 \
+    --port 9090 \
     --model Qwen/QwQ-32B \
     --dtype auto \
     --gpu-memory-utilization 0.95 \
@@ -212,7 +221,7 @@ _Once the application loads, the RAG system initializes. (Model loading might ta
   - Under `Select Context Input Method`, choose either `Direct Text Input` or `File Upload`.
   - **Text Input**: Paste the context content into the text area.
   - **File Upload**: Upload files in supported formats (PDF, DOCX, TXT).
-  - You can input context by selecting either the `Direct Text Input` or `File Upload` method. The system processes the input context and creates/updates the FAISS vector database (the existing DB will be deleted).
+  - **Add Input Context to Knowledge Base**: The system processes the input context and creates/updates the FAISS vector database with your context.
 
 - **Ask a Question**
 
@@ -258,13 +267,12 @@ _Once the application loads, the RAG system initializes. (Model loading might ta
     └── README.md               # This document
 ```
 
-## 9\. Key Design Choices
-
-- **Use of vLLM**: vLLM was chosen for serving and inferencing large language models to target high throughput and low latency. This offers advantages in scalability and resource management compared to loading models directly locally.
-- **FAISS Vector Store**: Selected for its fast and efficient similarity search performance on large datasets, and it works well in both CPU and GPU environments. Supports in-memory and file-based persistence.
-- **Adaptive Conversation History Handling**: Introduced an adaptive processing method applying the RAG approach to the conversation history itself to mitigate LLM context length limitations and maintain relevant information even in long conversations.
-- **Modular Design**: Clearly separated the roles of each component to enhance code readability, testability, maintainability, and future feature expansion. Utilized Langchain interfaces to improve compatibility between components.
-- **Streamlit UI**: Chosen as the UI framework because it allows for rapid prototyping of data applications and is suitable for user interaction and result visualization.
-- **Support for Various File Formats**: Can accept various file types as input through libraries like `pypdf` and `python-docx`.
+## 9\. Design Philosophy and Key Decisions
+* **vLLM for Scalability**: Chosen for serving LLMs due to its high throughput and low latency capabilities, offering advantages in scalability and resource management over local model loading.
+* **FAISS for Efficiency**: Selected for its fast and memory-efficient similarity search performance on large datasets, suitable for both CPU and GPU environments, with support for persistence.
+* **Adaptive History for Long Contexts**: Implemented an adaptive RAG approach for conversation history to mitigate LLM context length limitations and maintain relevance in extended dialogues.
+* **Modular Architecture**: Designed with clear separation of concerns to enhance code readability, testability, maintainability, and ease of future feature integration. Leverages Langchain interfaces for improved component compatibility.
+* **Streamlit for Rapid UI Development**: Chosen for its ability to quickly build interactive data applications, suitable for user interaction and result visualization.
+* **Flexible File Input**: Integrated support for common document formats using libraries like pypdf and python-docx.
 
 ---
